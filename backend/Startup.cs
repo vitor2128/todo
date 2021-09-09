@@ -4,8 +4,11 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.OpenApi.Models;
+using Newtonsoft.Json.Serialization;
+using TodoApi.Services;
 
-namespace TodoApi {
+namespace TodoApi
+{
   public class Startup {
     public Startup(IConfiguration configuration) {
       Configuration = configuration;
@@ -16,6 +19,15 @@ namespace TodoApi {
     // This method gets called by the runtime. Use this method to add services to the container.
     public void ConfigureServices(IServiceCollection services) {
 
+      services.AddCors(c => {
+        c.AddPolicy("AllowOrigin", options => options.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+      });
+
+      services.AddControllersWithViews().AddNewtonsoftJson(options => options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore)
+        .AddNewtonsoftJson(options => options.SerializerSettings.ContractResolver = new DefaultContractResolver());
+
+       services.AddScoped<TodoService>();
+
       services.AddControllers();
       services.AddSwaggerGen(c => {
         c.SwaggerDoc("v1", new OpenApiInfo { Title = "TodoApi", Version = "v1" });
@@ -24,6 +36,9 @@ namespace TodoApi {
 
     // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env) {
+
+      app.UseCors(options => options.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
+
       if (env.IsDevelopment()) {
         app.UseDeveloperExceptionPage();
         app.UseSwagger();
